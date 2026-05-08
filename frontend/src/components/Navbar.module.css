@@ -1,0 +1,47 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0 2rem;
+  height: 60px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.logoAccent {
+  color: var(--accent);
+}
+
+.links {
+  display: flex;
+  list-style: none;
+  gap: 0.25rem;
+}
+
+.link {
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: color 0.15s, background 0.15s;
+}
+
+.link:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.active {
+  color: var(--accent) !important;
+  background: rgba(124, 106, 247, 0.12);
+}

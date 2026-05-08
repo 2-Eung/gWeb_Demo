@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Eung\\\\IdeaProjects\\\\project\\\\gWeb2\\\\backend\\\\src\\\\main\" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Eung\\\\IdeaProjects\\\\project\\\\gWeb2\\\\frontend\\\\src\" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })"
+    ]
+  }
+}

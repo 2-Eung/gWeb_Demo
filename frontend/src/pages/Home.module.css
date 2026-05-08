@@ -1,0 +1,127 @@
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem 2rem;
+  gap: 4rem;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.searchForm {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.searchBtn {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.searchBtn:hover {
+  background: var(--accent-hover);
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-width: 900px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .features {
+    grid-template-columns: 1fr;
+  }
+  .title {
+    font-size: 2rem;
+  }
+}
+
+.featureCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  text-align: left;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.featureCard:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.featureIcon {
+  font-size: 1.8rem;
+}
+
+.featureTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.featureDesc {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
