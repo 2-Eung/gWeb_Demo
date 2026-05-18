@@ -1,0 +1,81 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: gweb-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gweb2
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: gweb2
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  python-api:
+    build: ./python
+    container_name: gweb-python
+    restart: unless-stopped
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USERNAME: gweb2
+      DATABASE_PASSWORD: password
+      DATABASE_NAME: gweb2
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build: ./backend
+    container_name: gweb-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gweb2
+      SPRING_DATASOURCE_USERNAME: gweb2
+      SPRING_DATASOURCE_PASSWORD: password
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      PYTHON_API_URL: http://python-api:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      python-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "java", "-cp", "/app", "BackendHealthcheck", "http://127.0.0.1:8080/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    container_name: gweb-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  postgres_data:
