@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
@@ -10,6 +10,10 @@ from sqlalchemy.orm import Session
 from db import get_db
 from embedder import embed
 from steam_fetcher import fetch_steam_detail, fetch_steamspy, parse_release_date
+from review_fetcher import fetch_steam_reviews
+from signal_fetcher import fetch_youtube_signals
+from sentiment import score_review, extract_keywords
+from novelty import calculate_decay
 
 app = FastAPI(title="gWeb2 Python Service", version="0.1.0")
 
@@ -22,6 +26,16 @@ class FetchRequest(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     query: str
+
+
+class ReviewFetchRequest(BaseModel):
+    game_id: int
+    app_id: int
+
+
+class SignalFetchRequest(BaseModel):
+    game_id: int
+    game_name: str
 
 
 class AnalyzeResponse(BaseModel):
@@ -199,6 +213,123 @@ def analyze_query(req: AnalyzeRequest, db: Session = Depends(get_db)):
         intent=intent,
         matched_game_ids=matched,
     )
+
+
+@app.post("/reviews/fetch")
+def fetch_reviews(req: ReviewFetchRequest, db: Session = Depends(get_db)):
+    reviews = fetch_steam_reviews(req.app_id)
+    if not reviews:
+        return {"status": "no_reviews", "count": 0}
+
+    for r in reviews:
+        score = score_review(r.get("review", ""))
+        ts = r.get("timestamp_created", 0)
+        db.execute(text("""
+            INSERT INTO game_signals (game_id, source_type, source_id, content, author, sentiment_score, engagement_count, collected_at)
+            VALUES (:game_id, 'STEAM_REVIEW', :source_id, :content, :author, :sentiment_score, :engagement_count, to_timestamp(:ts))
+            ON CONFLICT (source_type, source_id) DO NOTHING
+        """), {
+            "game_id": req.game_id,
+            "source_id": str(r.get("recommendationid", "")),
+            "content": r.get("review", ""),
+            "author": r.get("author", {}).get("steamid", ""),
+            "sentiment_score": score,
+            "engagement_count": r.get("votes_up", 0),
+            "ts": ts,
+        })
+
+    pos_kws, neg_kws = extract_keywords(reviews)
+    scores = [score_review(r.get("review", "")) for r in reviews]
+    avg_score = round(sum(scores) / len(scores), 3) if scores else None
+
+    game_row = db.execute(
+        text("SELECT release_date FROM games WHERE id = :id"), {"id": req.game_id}
+    ).fetchone()
+    release_date = game_row[0] if game_row else None
+    decay = calculate_decay(reviews, release_date)
+
+    steam_count = db.execute(
+        text("SELECT COUNT(*) FROM game_signals WHERE game_id = :gid AND source_type = 'STEAM_REVIEW'"),
+        {"gid": req.game_id}
+    ).scalar()
+
+    db.execute(text("""
+        INSERT INTO game_metrics (game_id, steam_review_count, avg_sentiment_score, positive_keywords, negative_keywords,
+            decay_score, week1_ratio, month1_ratio, total_analyzed, updated_at)
+        VALUES (:game_id, :steam_count, :avg_score, :pos_kws, :neg_kws,
+            :decay_score, :week1_ratio, :month1_ratio, :total_analyzed, NOW())
+        ON CONFLICT (game_id) DO UPDATE SET
+            steam_review_count  = EXCLUDED.steam_review_count,
+            avg_sentiment_score = EXCLUDED.avg_sentiment_score,
+            positive_keywords   = EXCLUDED.positive_keywords,
+            negative_keywords   = EXCLUDED.negative_keywords,
+            decay_score         = EXCLUDED.decay_score,
+            week1_ratio         = EXCLUDED.week1_ratio,
+            month1_ratio        = EXCLUDED.month1_ratio,
+            total_analyzed      = EXCLUDED.total_analyzed,
+            updated_at          = NOW()
+    """), {
+        "game_id": req.game_id,
+        "steam_count": steam_count,
+        "avg_score": avg_score,
+        "pos_kws": json.dumps(pos_kws, ensure_ascii=False),
+        "neg_kws": json.dumps(neg_kws, ensure_ascii=False),
+        "decay_score": decay["decay_score"],
+        "week1_ratio": decay["week1_ratio"],
+        "month1_ratio": decay["month1_ratio"],
+        "total_analyzed": decay["total_analyzed"],
+    })
+
+    db.commit()
+    return {"status": "ok", "count": len(reviews)}
+
+
+@app.post("/signals/fetch")
+def fetch_signals(req: SignalFetchRequest, db: Session = Depends(get_db)):
+    signals = fetch_youtube_signals(req.game_name)
+    if not signals:
+        return {"status": "no_signals", "count": 0}
+
+    for s in signals:
+        published_at = None
+        if s.get("published_at"):
+            try:
+                published_at = datetime.fromisoformat(s["published_at"].replace("Z", "+00:00"))
+            except ValueError:
+                pass
+
+        db.execute(text("""
+            INSERT INTO game_signals (game_id, source_type, source_id, url, title, author, engagement_count, collected_at)
+            VALUES (:game_id, 'YOUTUBE', :source_id, :url, :title, :author, :engagement_count, :collected_at)
+            ON CONFLICT (source_type, source_id) DO NOTHING
+        """), {
+            "game_id": req.game_id,
+            "source_id": s["source_id"],
+            "url": s["url"],
+            "title": s["title"],
+            "author": s["author"],
+            "engagement_count": s["engagement_count"],
+            "collected_at": published_at,
+        })
+
+    yt_count = db.execute(
+        text("SELECT COUNT(*) FROM game_signals WHERE game_id = :gid AND source_type = 'YOUTUBE'"),
+        {"gid": req.game_id}
+    ).scalar()
+
+    db.execute(text("""
+        INSERT INTO game_metrics (game_id, youtube_signal_count, updated_at)
+        VALUES (:game_id, :yt_count, NOW())
+        ON CONFLICT (game_id) DO UPDATE SET
+            youtube_signal_count = EXCLUDED.youtube_signal_count,
+            updated_at           = NOW()
+    """), {
+        "game_id": req.game_id,
+        "yt_count": yt_count,
+    })
+
+    db.commit()
+    return {"status": "ok", "count": len(signals)}
 
 
 def extract_intent(query: str) -> str:
