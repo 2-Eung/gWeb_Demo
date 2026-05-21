@@ -1,16 +1,38 @@
-# React + Vite
+# 프론트엔드
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+`gWeb_Demo`의 React + Vite 프론트엔드입니다.
 
-Currently, two official plugins are available:
+## API 설정
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+프론트엔드 axios 클라이언트는 API 기본 주소를 `import.meta.env.VITE_API_URL`에서 읽습니다.
 
-## React Compiler
+- 기준 값: 저장소 루트 `.env`
+- 루트 `.env`를 쓰는 이유: `vite.config.js`에서 `envDir: '..'`를 설정해 로컬 Vite와 Docker Compose가 같은 변수를 함께 사용합니다.
+- 값이 없을 때 기본값: `http://localhost:8080/api`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 로컬 개발
 
-## Expanding the ESLint configuration
+저장소 루트에서:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cp .env.example .env
+```
+
+그다음 `frontend/`에서:
+
+```bash
+npm install
+npm run dev
+```
+
+개발 서버 주소는 [http://localhost:5173](http://localhost:5173)입니다.
+
+## Docker 빌드
+
+`docker-compose.yml`은 `VITE_API_URL`을 프론트엔드 빌드 인자로 전달합니다.
+
+`VITE_API_URL`을 변경했다면 프론트엔드 이미지를 다시 빌드하세요.
+
+```bash
+docker-compose up --build frontend
+```
