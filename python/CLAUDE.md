@@ -32,6 +32,7 @@
 
 ## 임베딩
 - Ollama `bge-m3` 모델: `http://localhost:11434`
+- Docker Compose는 Ollama를 실행하지 않으므로, 호스트 PC에서 `ollama serve`와 `ollama pull bge-m3`를 먼저 실행해야 함
 - `embedder.py` 의 `embed(text: str) -> list[float]` 함수만 사용
 
 ## 외부 API
