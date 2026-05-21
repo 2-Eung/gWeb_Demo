@@ -25,6 +25,22 @@ cp .env.example .env
 
 ## Docker 실행
 
+Docker Compose는 PostgreSQL, Python API, Java 백엔드, 프론트엔드만 실행합니다.
+Ollama는 Docker Compose에 포함되어 있지 않으므로 호스트 PC에서 별도로 실행해야 합니다.
+
+먼저 로컬에서 Ollama 서버와 필요한 모델을 준비합니다.
+
+```bash
+ollama serve
+ollama pull bge-m3
+ollama pull gemma4:e2b
+```
+
+Compose 환경에서는 컨테이너가 호스트의 Ollama에 접속하도록 `docker-compose.yml`의
+`OLLAMA_BASE_URL`이 `http://host.docker.internal:11434`로 설정되어 있습니다.
+Ollama가 꺼져 있으면 Steam 데이터 수집이나 질의 분석 중 임베딩/LLM 호출에서
+`Connection refused` 오류가 발생합니다.
+
 ```bash
 docker compose up --build
 ```

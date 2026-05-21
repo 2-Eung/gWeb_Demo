@@ -30,6 +30,7 @@ com.gweb2
 - Python 서비스: `http://localhost:8000` (RestTemplate / HttpClient)
 - Ollama LLM: `http://localhost:11434` (Gemma4 e2b 모델)
 - Ollama 임베딩: `http://localhost:11434` (bge-m3 모델)
+- Docker Compose는 Ollama 컨테이너를 띄우지 않으므로 호스트 PC에서 로컬 Ollama를 별도로 실행해야 함
 - 모든 외부 호출은 `global/config/AppConfig.java` 의 Bean 사용
 
 ## API 엔드포인트
