@@ -5,6 +5,7 @@ import Search from './pages/Search'
 import GameDetail from './pages/GameDetail'
 import Fetch from './pages/Fetch'
 import Chat from './pages/Chat'
+import Manage from './pages/Manage'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path='/game/:steamAppId' element={<GameDetail />} />
         <Route path='/fetch' element={<Fetch />} />
         <Route path='/chat' element={<Chat />} />
+        <Route path='/manage' element={<Manage />} />
       </Routes>
     </BrowserRouter>
   )

@@ -36,12 +36,16 @@ export default function GameDetail() {
           <h1 className={styles.title}>{game.name}</h1>
           {game.shortDescription && <p className={styles.desc}>{game.shortDescription}</p>}
           <div className={styles.metaRow}>
-            {game.priceFinal != null && (
-              <div className={styles.priceContainer}>
-                {game.priceInitial && game.priceInitial > game.priceFinal ? (
+            <div className={styles.priceContainer}>
+              {game.priceFinal != null ? (
+                game.priceInitial && game.priceInitial > game.priceFinal ? (
                   <>
                     <span className={styles.discountBadge}>
-                      -{Math.round(((game.priceInitial - game.priceFinal) / game.priceInitial) * 100)}%
+                      -
+                      {Math.round(
+                        ((game.priceInitial - game.priceFinal) / game.priceInitial) * 100
+                      )}
+                      %
                     </span>
                     <span className={styles.originalPrice}>
                       ₩{game.priceInitial.toLocaleString()}
@@ -54,9 +58,11 @@ export default function GameDetail() {
                   <span className={styles.price}>
                     {game.priceFinal === 0 ? '무료' : `₩${game.priceFinal.toLocaleString()}`}
                   </span>
-                )}
-              </div>
-            )}
+                )
+              ) : (
+                <span className={styles.price}>가격 미정</span>
+              )}
+            </div>
             {ratio !== null && (
               <span className={ratio >= 70 ? styles.positive : styles.negative}>
                 호감도 {ratio}% ({total.toLocaleString()}개 리뷰)

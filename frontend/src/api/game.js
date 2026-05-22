@@ -12,3 +12,8 @@ export const sendQuery = (query, sessionId) =>
 
 export const getGamesPaged = (page = 0, size = 8) =>
   client.get('/games', { params: { page, size } }).then(r => r.data)
+
+export const updateGame = (steamAppId, updatedData) =>
+  client.put(`/games/${steamAppId}`, updatedData).then(r => r.data)
+
+export const deleteGame = steamAppId => client.delete(`/games/${steamAppId}`).then(r => r.data)

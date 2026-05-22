@@ -10,6 +10,7 @@ const NAV = [
   { to: '/search', label: '게임 검색' },
   { to: '/fetch', label: '게임 등록' },
   { to: '/chat', label: 'AI 분석' },
+  { to: '/manage', label: '게임 관리' },
 ]
 
 /**

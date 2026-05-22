@@ -2,6 +2,7 @@ package com.gweb2.domain.game.controller;
 
 import com.gweb2.domain.game.dto.GameDataRequest;
 import com.gweb2.domain.game.dto.GameSummaryResponse;
+import com.gweb2.domain.game.dto.GameUpdateRequest;
 import com.gweb2.domain.game.service.GameDataService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,22 @@ public class GameController {
             @PageableDefault(size = 8, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         var gamesPage = gameDataService.getGames(pageable);
         return ResponseEntity.ok(gamesPage.map(GameSummaryResponse::from));
+    }
+
+    // 게임 데이터 수정 (직접 변경)
+    @PutMapping("/{steamAppId}")
+    public ResponseEntity<GameSummaryResponse> updateGame(
+            @PathVariable Long steamAppId,
+            @Valid @RequestBody GameUpdateRequest request) {
+        var game = gameDataService.updateGame(steamAppId, request);
+        return ResponseEntity.ok(GameSummaryResponse.from(game));
+    }
+
+    // 게임 데이터 삭제
+    @DeleteMapping("/{steamAppId}")
+    public ResponseEntity<Void> deleteGame(@PathVariable Long steamAppId) {
+        gameDataService.deleteGame(steamAppId);
+        return ResponseEntity.noContent().build();
     }
 }
 
