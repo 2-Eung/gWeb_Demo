@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getGamesPaged, updateGame, deleteGame, fetchGame } from '../api/game'
 import { useAsync } from '../hooks/useAsync'
 import Pagination from '../components/Pagination'
@@ -305,6 +305,7 @@ function AuditLogSummary() {
  * 게임 데이터 수정을 위한 모달 컴포넌트
  */
 function EditGameModal({ game, onClose, onSave, disabled }) {
+  const dialogRef = useRef(null)
   const [formData, setFormData] = useState({
     name: game.name || '',
     shortDescription: game.shortDescription || '',
@@ -313,8 +314,28 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
     genresString: game.genres ? game.genres.join(', ') : '',
   })
 
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (dialog && !dialog.open) {
+      dialog.showModal()
+    }
+  }, [])
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleCancel = event => {
+    event.preventDefault()
+    if (!disabled) {
+      onClose()
+    }
+  }
+
+  const handleBackdropClick = event => {
+    if (!disabled && event.target === event.currentTarget) {
+      onClose()
+    }
   }
 
   const handleSubmit = e => {
@@ -330,36 +351,37 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
   }
 
   return (
-    <div className={styles.modalBackdrop}>
-      <div className={styles.modal}>
-        <h2 className={styles.modalTitle}>게임 정보 수정</h2>
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {EDIT_FIELDS.map(fieldConfig => (
-            <FormField
-              key={fieldConfig.id}
-              {...fieldConfig}
-              value={formData[fieldConfig.field]}
-              onChange={value => handleChange(fieldConfig.field, value)}
-              disabled={disabled}
-            />
-          ))}
+    <dialog
+      ref={dialogRef}
+      className={styles.modal}
+      aria-labelledby='edit-game-modal-title'
+      onCancel={handleCancel}
+      onClick={handleBackdropClick}
+    >
+      <h2 id='edit-game-modal-title' className={styles.modalTitle}>
+        게임 정보 수정
+      </h2>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        {EDIT_FIELDS.map(fieldConfig => (
+          <FormField
+            key={fieldConfig.id}
+            {...fieldConfig}
+            value={formData[fieldConfig.field]}
+            onChange={value => handleChange(fieldConfig.field, value)}
+            disabled={disabled}
+          />
+        ))}
 
-          <div className={styles.modalActions}>
-            <button
-              type='button'
-              className={styles.btnCancel}
-              onClick={onClose}
-              disabled={disabled}
-            >
-              취소
-            </button>
-            <button type='submit' className={styles.btnSave} disabled={disabled}>
-              저장
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className={styles.modalActions}>
+          <button type='button' className={styles.btnCancel} onClick={onClose} disabled={disabled}>
+            취소
+          </button>
+          <button type='submit' className={styles.btnSave} disabled={disabled}>
+            저장
+          </button>
+        </div>
+      </form>
+    </dialog>
   )
 }
 

@@ -59,6 +59,16 @@ function clickFirstActionButton(name) {
   fireEvent.click(screen.getAllByRole('button', { name })[0])
 }
 
+function cancelDialog(dialog) {
+  fireEvent(dialog, new Event('cancel', { cancelable: true }))
+}
+
+async function openEditDialog() {
+  await renderLoadedManage()
+  clickFirstActionButton('수정')
+  return screen.getByRole('dialog', { name: '게임 정보 수정' })
+}
+
 describe('Manage Page regression specifications', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -100,9 +110,8 @@ describe('Manage Page regression specifications', () => {
 
   it('opens the edit modal with accessible Korean controls and saves edited fields', async () => {
     updateGame.mockResolvedValue({ success: true })
-    await renderLoadedManage()
 
-    clickFirstActionButton('수정')
+    expect(await openEditDialog()).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '게임 정보 수정' })).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText('게임 이름'), {
@@ -122,6 +131,38 @@ describe('Manage Page regression specifications', () => {
         })
       )
     })
+  })
+
+  it('closes the edit dialog through the native cancel event', async () => {
+    const dialog = await openEditDialog()
+
+    cancelDialog(dialog)
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: '게임 정보 수정' })).not.toBeInTheDocument()
+    })
+  })
+
+  it('closes the edit dialog when the backdrop is clicked', async () => {
+    const dialog = await openEditDialog()
+
+    fireEvent.click(dialog)
+
+    expect(screen.queryByRole('dialog', { name: '게임 정보 수정' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the edit dialog open while a save is pending', async () => {
+    updateGame.mockReturnValue(new Promise(() => {}))
+    const dialog = await openEditDialog()
+
+    fireEvent.click(screen.getByRole('button', { name: '저장' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '취소' })).toBeDisabled()
+    })
+    cancelDialog(dialog)
+
+    expect(screen.getByRole('dialog', { name: '게임 정보 수정' })).toBeInTheDocument()
   })
 
   it('syncs one game from Steam and shows a readable success message', async () => {
