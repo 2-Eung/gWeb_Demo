@@ -6,6 +6,16 @@ import { playwright } from '@vitest/browser-playwright'
 export default defineConfig({
   envDir: '..',
   plugins: [react()],
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react-router-dom',
+      '@testing-library/react',
+      '@testing-library/jest-dom',
+    ],
+  },
   test: {
     globals: true,
     browser: {

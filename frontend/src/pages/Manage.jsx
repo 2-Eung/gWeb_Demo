@@ -4,6 +4,63 @@ import { useAsync } from '../hooks/useAsync'
 import Pagination from '../components/Pagination'
 import styles from './Manage.module.css'
 
+const PAGE_SIZE = 8
+const STATUS_RESET_DELAY = 5000
+const EMPTY_STATUS = { type: '', message: '' }
+
+const AUDIT_LOG_STYLES = {
+  footer: { marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' },
+  title: { fontSize: '1rem', color: 'var(--text-muted)' },
+  description: { fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' },
+}
+
+const EDIT_FIELDS = [
+  { id: 'edit-game-name', field: 'name', label: '게임 이름', type: 'text', required: true },
+  { id: 'edit-game-description', field: 'shortDescription', label: '짧은 설명', as: 'textarea' },
+  {
+    id: 'edit-game-price-initial',
+    field: 'priceInitial',
+    label: '정가 (₩)',
+    type: 'number',
+    min: '0',
+  },
+  {
+    id: 'edit-game-price-final',
+    field: 'priceFinal',
+    label: '판매가 (₩)',
+    type: 'number',
+    min: '0',
+  },
+  {
+    id: 'edit-game-genres',
+    field: 'genresString',
+    label: '장르 (쉼표로 구분)',
+    type: 'text',
+    placeholder: 'Action, Adventure, Indie',
+  },
+]
+
+const toPriceInputValue = price => (price !== null && price !== undefined ? price : '')
+
+const formatPrice = price => {
+  if (price === 0) return '무료'
+  if (price !== null && price !== undefined) return `₩${price.toLocaleString()}`
+  return '가격 미정'
+}
+
+const formatGenres = genres => {
+  if (!genres) return ''
+  return `${genres.slice(0, 3).join(', ')}${genres.length > 3 ? ' ...' : ''}`
+}
+
+const parseNullableNumber = value => (value !== '' ? Number(value) : null)
+
+const parseGenres = genresString =>
+  genresString
+    .split(',')
+    .map(genre => genre.trim())
+    .filter(Boolean)
+
 /**
  * 게임 데이터를 관리하는 페이지 컴포넌트 (U, D 담당)
  *
@@ -14,7 +71,7 @@ export default function Manage() {
   const [page, setPage] = useState(0)
   const [actionLoading, setActionLoading] = useState(null)
   const [editingGame, setEditingGame] = useState(null)
-  const [status, setStatus] = useState({ type: '', message: '' })
+  const [status, setStatus] = useState(EMPTY_STATUS)
 
   // useAsync 훅을 이용한 비동기 조회 상태 관리
   const { execute: fetchGames, loading, data } = useAsync(getGamesPaged)
@@ -22,13 +79,13 @@ export default function Manage() {
   const showStatus = useCallback((type, message) => {
     setStatus({ type, message })
     setTimeout(() => {
-      setStatus({ type: '', message: '' })
-    }, 5000)
+      setStatus(EMPTY_STATUS)
+    }, STATUS_RESET_DELAY)
   }, [])
 
   // 데이터 로드 함수
   const loadGames = useCallback(() => {
-    fetchGames(page, 8).catch(err => {
+    fetchGames(page, PAGE_SIZE).catch(err => {
       console.error(err)
       showStatus('error', '게임 목록을 불러오는 중 오류가 발생했습니다.')
     })
@@ -46,7 +103,7 @@ export default function Manage() {
     setActionLoading(steamAppId)
     try {
       await deleteGame(steamAppId)
-      showStatus('success', `"${name}" 게임을 성공적으로 삭제했습니다.`)
+      showStatus('success', `"${name}" 게임이 성공적으로 삭제되었습니다.`)
       if (games.length === 1 && page > 0) {
         setPage(p => p - 1)
       } else {
@@ -114,39 +171,13 @@ export default function Manage() {
         <p className={styles.loadingText}>데이터를 불러오는 중...</p>
       ) : (
         <>
-          <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>게임 정보</th>
-                  <th className={styles.th}>Steam App ID</th>
-                  <th className={styles.th}>가격</th>
-                  <th className={styles.th}>장르</th>
-                  <th className={styles.th}>작업</th>
-                </tr>
-              </thead>
-              <tbody>
-                {games.length === 0 ? (
-                  <tr>
-                    <td colSpan='5' className={styles.loadingText}>
-                      등록된 게임이 없습니다.
-                    </td>
-                  </tr>
-                ) : (
-                  games.map(game => (
-                    <GameRow
-                      key={game.steamAppId}
-                      game={game}
-                      onEdit={setEditingGame}
-                      onSync={handleFetchUpdate}
-                      onDelete={handleDelete}
-                      actionLoading={actionLoading}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <GameTable
+            games={games}
+            actionLoading={actionLoading}
+            onEdit={setEditingGame}
+            onSync={handleFetchUpdate}
+            onDelete={handleDelete}
+          />
 
           {totalPages > 1 && (
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
@@ -154,17 +185,7 @@ export default function Manage() {
         </>
       )}
 
-      {/* 감사 로그 섹션 (테스트 통과 및 스펙 구현) */}
-      <footer
-        className={styles.footer}
-        style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}
-      >
-        <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>동기화 및 삭제 감사 로그</h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-          최근 데이터 변경 및 동기화/삭제 내역이 여기에 기록됩니다. (로컬 캐시 및 감사 추적
-          활성화됨)
-        </p>
-      </footer>
+      <AuditLogSummary />
 
       {/* Edit Modal */}
       {editingGame && (
@@ -176,6 +197,44 @@ export default function Manage() {
         />
       )}
     </main>
+  )
+}
+
+function GameTable({ games, actionLoading, onEdit, onSync, onDelete }) {
+  return (
+    <div className={styles.tableContainer}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.th}>게임 정보</th>
+            <th className={styles.th}>Steam App ID</th>
+            <th className={styles.th}>가격</th>
+            <th className={styles.th}>장르</th>
+            <th className={styles.th}>작업</th>
+          </tr>
+        </thead>
+        <tbody>
+          {games.length === 0 ? (
+            <tr>
+              <td colSpan='5' className={styles.loadingText}>
+                등록된 게임이 없습니다.
+              </td>
+            </tr>
+          ) : (
+            games.map(game => (
+              <GameRow
+                key={game.steamAppId}
+                game={game}
+                onEdit={onEdit}
+                onSync={onSync}
+                onDelete={onDelete}
+                actionLoading={actionLoading}
+              />
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -199,14 +258,9 @@ function GameRow({ game, onEdit, onSync, onDelete, actionLoading }) {
         <span className={styles.appId}>{game.steamAppId}</span>
       </td>
       <td className={styles.td}>
-        <span className={styles.price}>
-          {game.priceFinal === 0 ? '무료' : game.priceFinal != null ? `₩${game.priceFinal.toLocaleString()}` : '가격 미정'}
-        </span>
+        <span className={styles.price}>{formatPrice(game.priceFinal)}</span>
       </td>
-      <td className={styles.td}>
-        {game.genres && game.genres.slice(0, 3).join(', ')}
-        {game.genres && game.genres.length > 3 && ' ...'}
-      </td>
+      <td className={styles.td}>{formatGenres(game.genres)}</td>
       <td className={styles.td}>
         <div className={styles.actions}>
           <button
@@ -236,6 +290,17 @@ function GameRow({ game, onEdit, onSync, onDelete, actionLoading }) {
   )
 }
 
+function AuditLogSummary() {
+  return (
+    <footer className={styles.footer} style={AUDIT_LOG_STYLES.footer}>
+      <h3 style={AUDIT_LOG_STYLES.title}>동기화 및 삭제 감사 로그</h3>
+      <p style={AUDIT_LOG_STYLES.description}>
+        최근 데이터 변경 및 동기화, 삭제 이력을 여기에 기록합니다. (로컬 캐시 및 감사 추적 활성화됨)
+      </p>
+    </footer>
+  )
+}
+
 /**
  * 게임 데이터 수정을 위한 모달 컴포넌트
  */
@@ -243,8 +308,8 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
   const [formData, setFormData] = useState({
     name: game.name || '',
     shortDescription: game.shortDescription || '',
-    priceInitial: game.priceInitial !== null && game.priceInitial !== undefined ? game.priceInitial : '',
-    priceFinal: game.priceFinal !== null && game.priceFinal !== undefined ? game.priceFinal : '',
+    priceInitial: toPriceInputValue(game.priceInitial),
+    priceFinal: toPriceInputValue(game.priceFinal),
     genresString: game.genres ? game.genres.join(', ') : '',
   })
 
@@ -258,12 +323,9 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
       steamAppId: game.steamAppId,
       name: formData.name,
       shortDescription: formData.shortDescription,
-      priceInitial: formData.priceInitial !== '' ? Number(formData.priceInitial) : null,
-      priceFinal: formData.priceFinal !== '' ? Number(formData.priceFinal) : null,
-      genres: formData.genresString
-        .split(',')
-        .map(g => g.trim())
-        .filter(Boolean),
+      priceInitial: parseNullableNumber(formData.priceInitial),
+      priceFinal: parseNullableNumber(formData.priceFinal),
+      genres: parseGenres(formData.genresString),
     })
   }
 
@@ -272,63 +334,15 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
       <div className={styles.modal}>
         <h2 className={styles.modalTitle}>게임 정보 수정</h2>
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>게임 이름</label>
-            <input
-              type='text'
-              className={styles.input}
-              value={formData.name}
-              onChange={e => handleChange('name', e.target.value)}
-              required
+          {EDIT_FIELDS.map(fieldConfig => (
+            <FormField
+              key={fieldConfig.id}
+              {...fieldConfig}
+              value={formData[fieldConfig.field]}
+              onChange={value => handleChange(fieldConfig.field, value)}
               disabled={disabled}
             />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>짧은 설명</label>
-            <textarea
-              className={styles.textarea}
-              value={formData.shortDescription}
-              onChange={e => handleChange('shortDescription', e.target.value)}
-              disabled={disabled}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>정가 (₩)</label>
-            <input
-              type='number'
-              className={styles.input}
-              value={formData.priceInitial}
-              onChange={e => handleChange('priceInitial', e.target.value)}
-              min='0'
-              disabled={disabled}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>판매가 (₩)</label>
-            <input
-              type='number'
-              className={styles.input}
-              value={formData.priceFinal}
-              onChange={e => handleChange('priceFinal', e.target.value)}
-              min='0'
-              disabled={disabled}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>장르 (쉼표로 구분)</label>
-            <input
-              type='text'
-              className={styles.input}
-              value={formData.genresString}
-              placeholder='Action, Adventure, Indie'
-              onChange={e => handleChange('genresString', e.target.value)}
-              disabled={disabled}
-            />
-          </div>
+          ))}
 
           <div className={styles.modalActions}>
             <button
@@ -345,6 +359,27 @@ function EditGameModal({ game, onClose, onSave, disabled }) {
           </div>
         </form>
       </div>
+    </div>
+  )
+}
+
+function FormField({ id, label, value, onChange, disabled, as, ...inputProps }) {
+  const Field = as === 'textarea' ? 'textarea' : 'input'
+  const className = as === 'textarea' ? styles.textarea : styles.input
+
+  return (
+    <div className={styles.formGroup}>
+      <label htmlFor={id} className={styles.label}>
+        {label}
+      </label>
+      <Field
+        id={id}
+        className={className}
+        value={value}
+        onChange={event => onChange(event.target.value)}
+        disabled={disabled}
+        {...inputProps}
+      />
     </div>
   )
 }
