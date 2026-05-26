@@ -33,7 +33,4 @@ export const MOCK_TEST_GAME = {
   genres: ['Action', 'RPG'],
 }
 
-export const MOCK_GAMES = [
-  MOCK_DOTA_2,
-  MOCK_CS2,
-]
+export const MOCK_GAMES = [MOCK_DOTA_2, MOCK_CS2]

@@ -16,7 +16,7 @@ describe('FeatureCard Component', () => {
   it('renders features card with correct props', () => {
     render(
       <MemoryRouter>
-        <FeatureCard title="Test Title" desc="Test Description" icon="⭐" to="/test" />
+        <FeatureCard title='Test Title' desc='Test Description' icon='⭐' to='/test' />
       </MemoryRouter>
     )
 
@@ -28,7 +28,7 @@ describe('FeatureCard Component', () => {
   it('navigates to target path when clicked', () => {
     render(
       <MemoryRouter>
-        <FeatureCard title="Test Title" desc="Test Description" icon="⭐" to="/test" />
+        <FeatureCard title='Test Title' desc='Test Description' icon='⭐' to='/test' />
       </MemoryRouter>
     )
 

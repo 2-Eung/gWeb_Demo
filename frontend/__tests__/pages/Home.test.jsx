@@ -98,9 +98,7 @@ describe('Home Page', () => {
 
   it('renders pagination controls and handles page navigation', async () => {
     mockGetGamesPaged.mockResolvedValueOnce({
-      content: [
-        { ...MOCK_DOTA_2, id: 1 },
-      ],
+      content: [{ ...MOCK_DOTA_2, id: 1 }],
       number: 0,
       totalPages: 3,
       totalElements: 3,
@@ -125,9 +123,7 @@ describe('Home Page', () => {
 
     // 다음 페이지 데이터 모킹
     mockGetGamesPaged.mockResolvedValueOnce({
-      content: [
-        { ...MOCK_CS2, id: 2 },
-      ],
+      content: [{ ...MOCK_CS2, id: 2 }],
       number: 1,
       totalPages: 3,
       totalElements: 3,

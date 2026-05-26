@@ -5,7 +5,6 @@ import GameCard from '../../src/components/GameCard'
 import { MOCK_TEST_GAME as mockGame } from '../mocks/gameMocks'
 
 describe('GameCard', () => {
-
   it('게임 정보를 올바르게 렌더링해야 한다', () => {
     render(
       <MemoryRouter>

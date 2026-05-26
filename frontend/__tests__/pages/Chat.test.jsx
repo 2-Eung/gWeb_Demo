@@ -76,7 +76,7 @@ describe('Chat Page', () => {
 
     const textarea = screen.getByPlaceholderText(/게임에 대해 질문하세요/i)
     fireEvent.change(textarea, { target: { value: '엘든 링에 대해 알려줘' } })
-    
+
     // Press Shift+Enter - should NOT send query (does nothing)
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true })
     expect(sendQuery).not.toHaveBeenCalled()

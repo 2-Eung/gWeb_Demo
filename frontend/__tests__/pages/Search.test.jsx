@@ -45,9 +45,12 @@ describe('Search Page', () => {
     fireEvent.change(input, { target: { value: 'Counter' } })
 
     // Verify loading indicator is displayed and searchGames is eventually called
-    await waitFor(() => {
-      expect(searchGames).toHaveBeenCalledWith('Counter')
-    }, { timeout: 1000 })
+    await waitFor(
+      () => {
+        expect(searchGames).toHaveBeenCalledWith('Counter')
+      },
+      { timeout: 1000 }
+    )
 
     // Verify it renders the search result card
     await waitFor(() => {
@@ -67,9 +70,12 @@ describe('Search Page', () => {
     const input = screen.getByPlaceholderText(/게임 이름 검색/i)
     fireEvent.change(input, { target: { value: 'NonExistentGame' } })
 
-    await waitFor(() => {
-      expect(searchGames).toHaveBeenCalledWith('NonExistentGame')
-    }, { timeout: 1000 })
+    await waitFor(
+      () => {
+        expect(searchGames).toHaveBeenCalledWith('NonExistentGame')
+      },
+      { timeout: 1000 }
+    )
 
     await waitFor(() => {
       expect(screen.getByText(NO_SEARCH_RESULTS_MESSAGE)).toBeDefined()
@@ -77,7 +83,7 @@ describe('Search Page', () => {
   })
 
   it('should display error message on search failure', async () => {
-    const unhandledRejectionHandler = (e) => {
+    const unhandledRejectionHandler = e => {
       e.preventDefault()
     }
     window.addEventListener('unhandledrejection', unhandledRejectionHandler)

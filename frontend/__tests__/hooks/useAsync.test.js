@@ -106,7 +106,7 @@ describe('useAsync', () => {
 
   it('out-of-order error response should not set error state if a newer request has started', async () => {
     let callCount = 0
-    const mockFn = vi.fn().mockImplementation(async (shouldFail) => {
+    const mockFn = vi.fn().mockImplementation(async shouldFail => {
       const currentCall = ++callCount
       // Req 1 (fails) takes 200ms, Req 2 (succeeds) takes 50ms
       const delay = currentCall === 1 ? 200 : 50

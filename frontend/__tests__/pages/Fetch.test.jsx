@@ -101,7 +101,7 @@ describe('Fetch Page', () => {
   })
 
   it('should display error message on fetch failure', async () => {
-    const unhandledRejectionHandler = (e) => {
+    const unhandledRejectionHandler = e => {
       e.preventDefault()
     }
     window.addEventListener('unhandledrejection', unhandledRejectionHandler)

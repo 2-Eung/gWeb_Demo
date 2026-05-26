@@ -33,7 +33,7 @@ describe('GameDetail Page', () => {
   })
 
   it('renders error state on API failure', async () => {
-    const unhandledRejectionHandler = (e) => {
+    const unhandledRejectionHandler = e => {
       e.preventDefault()
     }
     window.addEventListener('unhandledrejection', unhandledRejectionHandler)

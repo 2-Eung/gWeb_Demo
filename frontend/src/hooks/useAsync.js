@@ -26,8 +26,7 @@ export const useAsync = asyncFunction => {
         return response
       } catch (err) {
         if (callId === lastCallId.current) {
-          const message =
-            err?.response?.data?.message || err?.message || DEFAULT_ERROR_MESSAGE
+          const message = err?.response?.data?.message || err?.message || DEFAULT_ERROR_MESSAGE
           setError(message)
         }
         throw err
