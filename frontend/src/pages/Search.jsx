@@ -5,6 +5,7 @@ import { useDebounce } from '../hooks/useDebounce'
 import { useAsync } from '../hooks/useAsync'
 import { useInput } from '../hooks/useInput'
 import GameCard from '../components/GameCard'
+import { NO_SEARCH_RESULTS_MESSAGE } from '../constants'
 import styles from './Search.module.css'
 
 /**
@@ -51,7 +52,7 @@ export default function Search() {
       {loading && <p className={styles.status}>검색 중...</p>}
       {error && <p className={styles.error}>{error}</p>}
       {!loading && !error && games.length === 0 && debounced && (
-        <p className={styles.status}>결과가 없습니다.</p>
+        <p className={styles.status}>{NO_SEARCH_RESULTS_MESSAGE}</p>
       )}
 
       <div className={styles.grid}>

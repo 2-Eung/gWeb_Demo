@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { getGamesPaged, updateGame, deleteGame, fetchGame } from '../api/game'
 import { useAsync } from '../hooks/useAsync'
 import Pagination from '../components/Pagination'
+import { PAGE_SIZE } from '../constants'
 import styles from './Manage.module.css'
 
-const PAGE_SIZE = 8
 const STATUS_RESET_DELAY = 5000
 const EMPTY_STATUS = { type: '', message: '' }
 

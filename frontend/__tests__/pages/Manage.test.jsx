@@ -10,32 +10,12 @@ vi.mock('../../src/api/game', () => ({
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { getGamesPaged, updateGame, deleteGame, fetchGame } from '../../src/api/game'
+import { MOCK_GAMES as mockGames } from '../mocks/gameMocks'
+import { FALLBACK_PAGE_SIZE } from '../../src/constants'
 
 const FIRST_PAGE = 0
-const PAGE_SIZE = 8
 const FIRST_GAME_APP_ID = 570
 const FIRST_GAME_NAME = 'Dota 2'
-
-const mockGames = [
-  {
-    steamAppId: FIRST_GAME_APP_ID,
-    name: FIRST_GAME_NAME,
-    shortDescription: 'Action RTS game by Valve.',
-    priceInitial: 0,
-    priceFinal: 0,
-    genres: ['Action', 'Free to Play'],
-    headerImage: 'https://example.com/dota2.jpg',
-  },
-  {
-    steamAppId: 730,
-    name: 'Counter-Strike 2',
-    shortDescription: 'Tactical shooter.',
-    priceInitial: 0,
-    priceFinal: 12000,
-    genres: ['Action', 'Shooter'],
-    headerImage: 'https://example.com/cs2.jpg',
-  },
-]
 
 const tableHeaders = ['게임 정보', 'Steam App ID', '가격', '장르', '작업']
 const priceLabels = ['무료', '₩12,000']
@@ -87,7 +67,7 @@ describe('Manage Page regression specifications', () => {
     await renderManage()
 
     await waitFor(() => {
-      expect(getGamesPaged).toHaveBeenCalledWith(FIRST_PAGE, PAGE_SIZE)
+      expect(getGamesPaged).toHaveBeenCalledWith(FIRST_PAGE, FALLBACK_PAGE_SIZE)
     })
   })
 

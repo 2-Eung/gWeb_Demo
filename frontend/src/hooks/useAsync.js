@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { DEFAULT_ERROR_MESSAGE } from '../constants'
 
 /**
  * 비동기 작업을 처리하기 위한 커스텀 훅
@@ -26,7 +27,7 @@ export const useAsync = asyncFunction => {
       } catch (err) {
         if (callId === lastCallId.current) {
           const message =
-            err?.response?.data?.message || err?.message || '알 수 없는 오류가 발생했습니다.'
+            err?.response?.data?.message || err?.message || DEFAULT_ERROR_MESSAGE
           setError(message)
         }
         throw err

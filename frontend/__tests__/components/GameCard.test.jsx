@@ -2,18 +2,9 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, it, expect } from 'vitest'
 import GameCard from '../../src/components/GameCard'
+import { MOCK_TEST_GAME as mockGame } from '../mocks/gameMocks'
 
 describe('GameCard', () => {
-  const mockGame = {
-    steamAppId: '12345',
-    name: 'Test Game',
-    headerImage: 'test-image.jpg',
-    shortDescription: 'This is a test description for the game.',
-    positiveReviews: 80,
-    negativeReviews: 20,
-    priceFinal: 15000,
-    genres: ['Action', 'RPG'],
-  }
 
   it('게임 정보를 올바르게 렌더링해야 한다', () => {
     render(
@@ -66,5 +57,40 @@ describe('GameCard', () => {
 
     const link = screen.getByRole('link')
     expect(link.getAttribute('href')).toBe('/game/12345')
+  })
+
+  it('호감도가 70% 미만일 때 negative 스타일을 적용해야 한다', () => {
+    const lowSentimentGame = { ...mockGame, positiveReviews: 40, negativeReviews: 60 }
+    render(
+      <MemoryRouter>
+        <GameCard game={lowSentimentGame} />
+      </MemoryRouter>
+    )
+
+    const sentiment = screen.getByText('호감도 40%')
+    expect(sentiment).toBeDefined()
+    expect(sentiment.className).toContain('negative')
+  })
+
+  it('리뷰 정보가 없을 때 호감도를 렌더링하지 않아야 한다', () => {
+    const noReviewsGame = { ...mockGame, positiveReviews: 0, negativeReviews: 0 }
+    render(
+      <MemoryRouter>
+        <GameCard game={noReviewsGame} />
+      </MemoryRouter>
+    )
+
+    expect(screen.queryByText(/호감도/)).toBeNull()
+  })
+
+  it('가격이 미정일 때 "가격 미정"이라고 표시해야 한다', () => {
+    const tbdGame = { ...mockGame, priceFinal: null }
+    render(
+      <MemoryRouter>
+        <GameCard game={tbdGame} />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText('가격 미정')).toBeDefined()
   })
 })

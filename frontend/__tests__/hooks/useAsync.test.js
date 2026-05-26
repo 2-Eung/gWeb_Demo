@@ -87,4 +87,57 @@ describe('useAsync', () => {
     await Promise.all([p1, p2])
     expect(result.current.data).toBe('data for second')
   })
+
+  it('error lacks message property should fallback to DEFAULT_ERROR_MESSAGE', async () => {
+    const mockFn = vi.fn().mockRejectedValue({})
+    const { result } = renderHook(() => useAsync(mockFn))
+
+    await act(async () => {
+      try {
+        await result.current.execute()
+      } catch {
+        // ignore
+      }
+    })
+
+    const { DEFAULT_ERROR_MESSAGE } = await import('../../src/constants')
+    expect(result.current.error).toBe(DEFAULT_ERROR_MESSAGE)
+  })
+
+  it('out-of-order error response should not set error state if a newer request has started', async () => {
+    let callCount = 0
+    const mockFn = vi.fn().mockImplementation(async (shouldFail) => {
+      const currentCall = ++callCount
+      // Req 1 (fails) takes 200ms, Req 2 (succeeds) takes 50ms
+      const delay = currentCall === 1 ? 200 : 50
+      await new Promise(resolve => setTimeout(resolve, delay))
+      if (shouldFail) {
+        throw new Error('Req 1 error')
+      }
+      return 'Req 2 data'
+    })
+
+    const { result } = renderHook(() => useAsync(mockFn))
+
+    // Req 1 starts and will fail
+    const p1 = act(async () => {
+      try {
+        await result.current.execute(true)
+      } catch {
+        // ignore
+      }
+    })
+
+    // Wait a bit, then Req 2 starts and will succeed
+    await new Promise(resolve => setTimeout(resolve, 20))
+    const p2 = act(async () => {
+      await result.current.execute(false)
+    })
+
+    await Promise.all([p1, p2])
+
+    // Should contain Req 2's success data and NOT Req 1's error
+    expect(result.current.data).toBe('Req 2 data')
+    expect(result.current.error).toBeNull()
+  })
 })
