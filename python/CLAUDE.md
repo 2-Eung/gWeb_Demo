@@ -26,12 +26,12 @@
 | POST | `/analyze` | 질의 → 임베딩 + pg_trgm → 유사 게임 IDs 반환 |
 
 ## DB 연결
-- DB: `gweb2` / user: `gweb2` / pw: `password` / 포트: 5432
+- DB 연결: 프로젝트 루트의 .env.example 파일 설정 참고 (DATABASE_HOST, DATABASE_PORT, DATABASE_NAME, DATABASE_USERNAME, DATABASE_PASSWORD)
 - 테이블 DDL은 **백엔드 Flyway가 관리** — Python에서 테이블 생성 금지
 - 쿼리는 `text()` raw SQL 사용 (ORM 모델 정의 없음)
 
 ## 임베딩
-- Ollama `bge-m3` 모델: `http://localhost:11434`
+- Ollama 임베딩 모델: `OLLAMA_BASE_URL` 및 `OLLAMA_EMBED_MODEL` 환경 변수 사용
 - Docker Compose는 Ollama를 실행하지 않으므로, 호스트 PC에서 `ollama serve`와 `ollama pull bge-m3`를 먼저 실행해야 함
 - `embedder.py` 의 `embed(text: str) -> list[float]` 함수만 사용
 

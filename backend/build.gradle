@@ -44,3 +44,24 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.withType(JavaForkOptions) {
+    // Load parent .env if it exists
+    def envFile = file("${project.projectDir}/../.env")
+    if (envFile.exists()) {
+        envFile.readLines().each { line ->
+            line = line.trim()
+            if (!line.startsWith("#") && line.contains("=")) {
+                def parts = line.split("=", 2)
+                def key = parts[0].trim()
+                def value = parts[1].trim()
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.substring(1, value.length() - 1)
+                } else if (value.startsWith("'") && value.endsWith("'")) {
+                    value = value.substring(1, value.length() - 1)
+                }
+                environment key, value
+            }
+        }
+    }
+}

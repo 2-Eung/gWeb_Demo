@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/gweb2
-    username: gweb2
-    password: password
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,15 +20,15 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: ${SERVER_PORT}
 
 ollama:
-  base-url: http://localhost:11434
-  llm-model: gemma4:e2b
-  embed-model: bge-m3
+  base-url: ${OLLAMA_BASE_URL}
+  llm-model: ${OLLAMA_LLM_MODEL}
+  embed-model: ${OLLAMA_EMBED_MODEL}
 
 python:
-  api-url: http://localhost:8000
+  api-url: ${PYTHON_API_URL}
 
 logging:
   level:

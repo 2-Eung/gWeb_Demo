@@ -9,6 +9,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
@@ -31,12 +32,14 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
@@ -47,11 +50,13 @@ The test: Every changed line should trace directly to the user's request.
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
 For multi-step tasks, state a brief plan:
+
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
@@ -64,7 +69,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
-## 여기까지는 코드 전역으로 절대적인거야 따르고, 내용을 수정하지마. 이후는 커스텀이야.
+## 여기까지는 코드 전역으로 절대적인거야 따르고, 내용을 수정하지마. 이후는 커스텀이야
 
 게이머와 개발자를위한 웹사이트 프로젝트
 게임추천, 분석, 리뷰, 게임개발도구, 게임시장 등등을 제공
@@ -72,6 +77,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ## 전체적인 흐름
 
 # 사용자 요청 처리
+
 1. 사용자의 요청        (React 프론트)
 2. 요청을 요청분석에 넘긴다 (Springboot)
 3. 요청 분석              (python)
@@ -126,8 +132,8 @@ DB 데이터 저장 의 추후 개발사항 을 고려하여 엔티티설계 희
 python : 라이브러리알아서판단 단 venv 필수 사용
 backend : Springboot 4.0 / java17 / gradle / 의존성 : flyway, JPA, lombok 등 더 필요하면 유연하게 동작
 front : js React
-DB : 로컬에 설치되었으며 PostgreSQL 18 이고 데이터베이스와 pgvector, pg_trgm 미리설치완료 데이터베이스이름 : gweb2 / 비밀번호 : password / 유저 : gweb2
+DB : 로컬에 설치되었으며 PostgreSQL 18 이고 데이터베이스와 pgvector, pg_trgm 미리설치완료 (상세 접속 정보는 프로젝트 루트의 .env 파일 설정 참고)
 llm 모델 : Ollama 통해 Gemma4 e2b 모델 로컬설치 완료
 임베딩모델 : Ollama 통해 bge-m3 모델 로컬설치 완료
 
-포트번호 기본 사용 / 통신은 RestApi 로
+포트번호 기본 사용 / 통신은 RestApi 로 하기

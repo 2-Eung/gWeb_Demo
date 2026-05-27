@@ -4,9 +4,9 @@ services:
     container_name: gweb-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: gweb2
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: gweb2
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -23,11 +23,13 @@ services:
     container_name: gweb-python
     restart: unless-stopped
     environment:
-      DATABASE_HOST: db
-      DATABASE_USERNAME: gweb2
-      DATABASE_PASSWORD: password
-      DATABASE_NAME: gweb2
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      DATABASE_HOST: ${DOCKER_DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
+      OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL}
     ports:
       - "8000:8000"
     depends_on:
@@ -45,11 +47,14 @@ services:
     container_name: gweb-backend
     restart: unless-stopped
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gweb2
-      SPRING_DATASOURCE_USERNAME: gweb2
-      SPRING_DATASOURCE_PASSWORD: password
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
-      PYTHON_API_URL: http://python-api:8000
+      SPRING_DATASOURCE_URL: ${DOCKER_SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL}
+      OLLAMA_LLM_MODEL: ${OLLAMA_LLM_MODEL}
+      OLLAMA_EMBED_MODEL: ${OLLAMA_EMBED_MODEL}
+      PYTHON_API_URL: ${DOCKER_PYTHON_API_URL}
+      SERVER_PORT: ${SERVER_PORT}
     ports:
       - "8080:8080"
     depends_on:
@@ -68,7 +73,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_API_URL: ${VITE_API_URL}
     container_name: gweb-frontend
     restart: unless-stopped
     ports:

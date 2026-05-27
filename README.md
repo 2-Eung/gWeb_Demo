@@ -122,3 +122,14 @@ npm run dev
 - [http://localhost:5173](http://localhost:5173)
 
 `VITE_API_URL`이 비어 있으면 프론트엔드는 `http://localhost:8080/api`를 기본값으로 사용합니다.
+
+## 보안 및 윤리 안내
+
+### 보안
+
+환경 변수에 적합한 상수를 gitignore된 .env에서 진행하도록 리팩토링했으며 이를 진행하기 위해서 .env.example을 활용해 루트 디렉토리에 .env를 설정해야합니다.
+이 리팩토링 후 docker 환경에서는 정상 작동이 확인됐습니다.
+
+### 윤리
+
+석정일(github 계정: but212)이 만든 모든 코드 및 기여분은 Antigravity, Codex 코딩 에이전트로 만들어진 AI생성 기여임을 알립니다.
