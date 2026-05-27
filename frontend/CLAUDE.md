@@ -33,7 +33,7 @@ frontend/
 
 ## API 통신
 
-- 백엔드 baseURL: `http://localhost:8080`
+- 백엔드 baseURL: `VITE_API_URL` 환경 변수 사용
 - `src/api/client.js` 의 axios 인스턴스 사용, 직접 fetch/axios 호출 금지
 - 새 API 함수는 `src/api/game.js` 에 추가
 

@@ -73,6 +73,14 @@ class FetchRequest(BaseModel):
     app_id: int
 
 
+class UpdateRequest(BaseModel):
+    name: str
+    short_description: str | None = None
+    price_initial: int | None = None
+    price_final: int | None = None
+    genres: list[str] = []
+
+
 class AnalyzeRequest(BaseModel):
     query: str
 
@@ -99,12 +107,21 @@ class AnalyzeResponse(BaseModel):
 def fetch_game(req: FetchRequest, db: Session = Depends(get_db)):
     app_id = req.app_id
 
-    # 이미 있으면 스킵
-    exists = db.execute(
-        text("SELECT 1 FROM games WHERE steam_appid = :id"), {"id": app_id}
+    # Check if game already exists
+    game_row = db.execute(
+        text("SELECT id FROM games WHERE steam_appid = :id"), {"id": app_id}
     ).fetchone()
-    if exists:
-        return {"status": "already_exists"}
+    
+    is_update = game_row is not None
+    game_id = game_row[0] if is_update else None
+
+    if is_update:
+        # Delete old child associations
+        db.execute(text("DELETE FROM game_genres WHERE game_id = :gid"), {"gid": game_id})
+        db.execute(text("DELETE FROM game_categories WHERE game_id = :gid"), {"gid": game_id})
+        db.execute(text("DELETE FROM game_actors WHERE game_id = :gid"), {"gid": game_id})
+        db.execute(text("DELETE FROM game_tags WHERE game_id = :gid"), {"gid": game_id})
+        db.execute(text("DELETE FROM document_chunks WHERE game_id = :gid AND chunk_type = 'GAME_DESCRIPTION'"), {"gid": game_id})
 
     # Steam API 호출
     detail = fetch_steam_detail(app_id)
@@ -114,13 +131,18 @@ def fetch_game(req: FetchRequest, db: Session = Depends(get_db)):
     spy = fetch_steamspy(app_id)
 
     # 기본 정보 파싱
+    is_free = detail.get("is_free", False)
     price_data = detail.get("price_overview", {})
     price_initial = price_data.get("initial")
     price_final = price_data.get("final")
-    if price_initial is not None:
-        price_initial = price_initial // 100
-    if price_final is not None:
-        price_final = price_final // 100
+    if is_free:
+        price_initial = 0
+        price_final = 0
+    else:
+        if price_initial is not None:
+            price_initial = price_initial // 100
+        if price_final is not None:
+            price_final = price_final // 100
     release_raw = detail.get("release_date", {}).get("date")
     release_date = parse_release_date(release_raw)
 
@@ -136,49 +158,94 @@ def fetch_game(req: FetchRequest, db: Session = Depends(get_db)):
     name_emb_str = "[" + ",".join(str(x) for x in name_emb) + "]"
     desc_emb_str = "[" + ",".join(str(x) for x in desc_emb) + "]"
 
-    # games 테이블 저장
-    result = db.execute(text("""
-        INSERT INTO games (
-            steam_appid, name, short_description, detailed_description,
-            header_image, release_date, is_free,
-            price_initial, price_final, metacritic_score, website,
-            owners_min, owners_max,
-            average_playtime_forever, median_playtime_forever,
-            positive_reviews, negative_reviews,
-            name_embedding, desc_embedding,
-            data_fetched_at, last_updated_at
-        ) VALUES (
-            :appid, :name, :short_desc, :detail_desc,
-            :header_image, :release_date, :is_free,
-            :price_initial, :price_final, :metacritic, :website,
-            :owners_min, :owners_max,
-            :avg_playtime, :med_playtime,
-            :positive, :negative,
-            CAST(:name_emb AS vector), CAST(:desc_emb AS vector),
-            NOW(), NOW()
-        ) RETURNING id
-    """), {
-        "appid": app_id,
-        "name": name,
-        "short_desc": short_desc,
-        "detail_desc": detail.get("detailed_description", ""),
-        "header_image": detail.get("header_image", ""),
-        "release_date": release_date,
-        "is_free": detail.get("is_free", False),
-        "price_initial": price_initial,
-        "price_final": price_final,
-        "metacritic": detail.get("metacritic", {}).get("score"),
-        "website": detail.get("website", ""),
-        "owners_min": owners_parts[0] if len(owners_parts) > 0 else None,
-        "owners_max": owners_parts[1] if len(owners_parts) > 1 else None,
-        "avg_playtime": spy.get("average_forever"),
-        "med_playtime": spy.get("median_forever"),
-        "positive": detail.get("recommendations", {}).get("total") or spy.get("positive"),
-        "negative": spy.get("negative"),
-        "name_emb": name_emb_str,
-        "desc_emb": desc_emb_str,
-    })
-    game_id = result.fetchone()[0]
+    # games 테이블 저장 (Update or Insert)
+    if is_update:
+        db.execute(text("""
+            UPDATE games SET
+                name = :name,
+                short_description = :short_desc,
+                detailed_description = :detail_desc,
+                header_image = :header_image,
+                release_date = :release_date,
+                is_free = :is_free,
+                price_initial = :price_initial,
+                price_final = :price_final,
+                metacritic_score = :metacritic,
+                website = :website,
+                owners_min = :owners_min,
+                owners_max = :owners_max,
+                average_playtime_forever = :avg_playtime,
+                median_playtime_forever = :med_playtime,
+                positive_reviews = :positive,
+                negative_reviews = :negative,
+                name_embedding = CAST(:name_emb AS vector),
+                desc_embedding = CAST(:desc_emb AS vector),
+                last_updated_at = NOW()
+            WHERE id = :gid
+        """), {
+            "gid": game_id,
+            "name": name,
+            "short_desc": short_desc,
+            "detail_desc": detail.get("detailed_description", ""),
+            "header_image": detail.get("header_image", ""),
+            "release_date": release_date,
+            "is_free": detail.get("is_free", False),
+            "price_initial": price_initial,
+            "price_final": price_final,
+            "metacritic": detail.get("metacritic", {}).get("score"),
+            "website": detail.get("website", ""),
+            "owners_min": owners_parts[0] if len(owners_parts) > 0 else None,
+            "owners_max": owners_parts[1] if len(owners_parts) > 1 else None,
+            "avg_playtime": spy.get("average_forever"),
+            "med_playtime": spy.get("median_forever"),
+            "positive": detail.get("recommendations", {}).get("total") or spy.get("positive"),
+            "negative": spy.get("negative"),
+            "name_emb": name_emb_str,
+            "desc_emb": desc_emb_str,
+        })
+    else:
+        result = db.execute(text("""
+            INSERT INTO games (
+                steam_appid, name, short_description, detailed_description,
+                header_image, release_date, is_free,
+                price_initial, price_final, metacritic_score, website,
+                owners_min, owners_max,
+                average_playtime_forever, median_playtime_forever,
+                positive_reviews, negative_reviews,
+                name_embedding, desc_embedding,
+                data_fetched_at, last_updated_at
+            ) VALUES (
+                :appid, :name, :short_desc, :detail_desc,
+                :header_image, :release_date, :is_free,
+                :price_initial, :price_final, :metacritic, :website,
+                :owners_min, :owners_max,
+                :avg_playtime, :med_playtime,
+                :positive, :negative,
+                CAST(:name_emb AS vector), CAST(:desc_emb AS vector),
+                NOW(), NOW()
+            ) RETURNING id
+        """), {
+            "appid": app_id,
+            "name": name,
+            "short_desc": short_desc,
+            "detail_desc": detail.get("detailed_description", ""),
+            "header_image": detail.get("header_image", ""),
+            "release_date": release_date,
+            "is_free": detail.get("is_free", False),
+            "price_initial": price_initial,
+            "price_final": price_final,
+            "metacritic": detail.get("metacritic", {}).get("score"),
+            "website": detail.get("website", ""),
+            "owners_min": owners_parts[0] if len(owners_parts) > 0 else None,
+            "owners_max": owners_parts[1] if len(owners_parts) > 1 else None,
+            "avg_playtime": spy.get("average_forever"),
+            "med_playtime": spy.get("median_forever"),
+            "positive": detail.get("recommendations", {}).get("total") or spy.get("positive"),
+            "negative": spy.get("negative"),
+            "name_emb": name_emb_str,
+            "desc_emb": desc_emb_str,
+        })
+        game_id = result.fetchone()[0]
 
     # 장르 저장
     for g in detail.get("genres", []):
@@ -221,6 +288,68 @@ def fetch_game(req: FetchRequest, db: Session = Depends(get_db)):
             INSERT INTO document_chunks (game_id, chunk_type, content, embedding)
             VALUES (:gid, 'GAME_DESCRIPTION', :content, CAST(:emb AS vector))
         """), {"gid": game_id, "content": short_desc, "emb": chunk_emb_str})
+
+    db.commit()
+    return {"status": "ok", "game_id": game_id}
+
+
+# ── /games/{steam_appid} : 게임 직접 수정 (임베딩 재계산 포함) ─────────────────────
+
+@app.put("/games/{steam_appid}", status_code=200)
+def update_game_endpoint(steam_appid: int, req: UpdateRequest, db: Session = Depends(get_db)):
+    # 1. Fetch game_id
+    game_row = db.execute(
+        text("SELECT id FROM games WHERE steam_appid = :id"), {"id": steam_appid}
+    ).fetchone()
+    if not game_row:
+        raise HTTPException(status_code=404, detail=f"Game with steam_appid {steam_appid} not found")
+    game_id = game_row[0]
+
+    # 2. Recalculate embeddings
+    name = req.name
+    short_desc = req.short_description or ""
+    name_emb = embed(name)
+    desc_emb = embed(short_desc) if short_desc else name_emb
+
+    name_emb_str = "[" + ",".join(str(x) for x in name_emb) + "]"
+    desc_emb_str = "[" + ",".join(str(x) for x in desc_emb) + "]"
+
+    # 3. Update games table
+    db.execute(text("""
+        UPDATE games SET
+            name = :name,
+            short_description = :short_desc,
+            price_initial = :price_initial,
+            price_final = :price_final,
+            name_embedding = CAST(:name_emb AS vector),
+            desc_embedding = CAST(:desc_emb AS vector),
+            last_updated_at = NOW()
+        WHERE id = :gid
+    """), {
+        "gid": game_id,
+        "name": name,
+        "short_desc": short_desc,
+        "price_initial": req.price_initial,
+        "price_final": req.price_final,
+        "name_emb": name_emb_str,
+        "desc_emb": desc_emb_str,
+    })
+
+    # 4. Update genres (delete old and insert new ones)
+    db.execute(text("DELETE FROM game_genres WHERE game_id = :gid"), {"gid": game_id})
+    for g_name in req.genres:
+        db.execute(text("""
+            INSERT INTO game_genres (game_id, genre_id, genre_name, source)
+            VALUES (:gid, 0, :genre_name, 'manual')
+        """), {"gid": game_id, "genre_name": g_name})
+
+    # 5. Update document_chunks (delete old game description chunk and insert new one)
+    db.execute(text("DELETE FROM document_chunks WHERE game_id = :gid AND chunk_type = 'GAME_DESCRIPTION'"), {"gid": game_id})
+    if short_desc:
+        db.execute(text("""
+            INSERT INTO document_chunks (game_id, chunk_type, content, embedding)
+            VALUES (:gid, 'GAME_DESCRIPTION', :content, CAST(:emb AS vector))
+        """), {"gid": game_id, "content": short_desc, "emb": desc_emb_str})
 
     db.commit()
     return {"status": "ok", "game_id": game_id}

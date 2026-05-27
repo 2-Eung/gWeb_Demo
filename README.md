@@ -122,3 +122,21 @@ npm run dev
 - [http://localhost:5173](http://localhost:5173)
 
 `VITE_API_URL`이 비어 있으면 프론트엔드는 `http://localhost:8080/api`를 기본값으로 사용합니다.
+
+## Ollama 설정 (로컬 vs Docker)
+
+Ollama 임베딩 및 LLM 모델을 사용하기 위해 로컬 환경과 Docker 환경의 접속 주소를 다르게 설정해야 합니다:
+
+- **로컬 개발 환경 (`OLLAMA_BASE_URL`)**: `http://localhost:11434`
+- **Docker Compose 환경 (`DOCKER_OLLAMA_BASE_URL`)**: `http://host.docker.internal:11434` (Docker 컨테이너 내부에서 호스트 OS에 실행 중인 Ollama로 접근하기 위해 `host.docker.internal` 호스트명을 사용합니다.)
+
+## 보안 및 윤리 안내
+
+### 보안
+
+환경 변수에 적합한 상수를 gitignore된 .env에서 진행하도록 리팩토링했으며 이를 진행하기 위해서 .env.example을 활용해 루트 디렉토리에 .env를 설정해야합니다.
+이 리팩토링 후 docker 환경에서는 정상 작동이 확인됐습니다.
+
+### 윤리
+
+석정일(github 계정: but212)이 만든 모든 코드 및 기여분은 Antigravity, Codex 코딩 에이전트로 만들어진 AI생성 기여임을 알립니다.

@@ -4,14 +4,19 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from pgvector.sqlalchemy import Vector
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load root .env file relative to this file
+dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+else:
+    load_dotenv()
 
-# Database Config with Fallbacks
-DB_HOST = os.getenv("DATABASE_HOST", "localhost")
-DB_PORT = os.getenv("DATABASE_PORT", "5432")
-DB_NAME = os.getenv("DATABASE_NAME", "gweb2")
-DB_USER = os.getenv("DATABASE_USERNAME", "gweb2")
-DB_PASS = os.getenv("DATABASE_PASSWORD", "password")
+# Database Config from Environment
+DB_HOST = os.environ["DATABASE_HOST"]
+DB_PORT = os.environ["DATABASE_PORT"]
+DB_NAME = os.environ["DATABASE_NAME"]
+DB_USER = os.environ["DATABASE_USERNAME"]
+DB_PASS = os.environ["DATABASE_PASSWORD"]
 
 # Construct URL if not provided directly
 DATABASE_URL = os.getenv(
